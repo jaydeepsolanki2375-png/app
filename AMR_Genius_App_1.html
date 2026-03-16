@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AMR-GENIUS — Intelligence Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&family=Orbitron:wght@600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050D1A;--bgCard:#0A1628;--bgElevated:#0F1E35;--bgInput:#091422;
+  --navy:#0F2848;--cyan:#00C8E8;--cyanDim:#0A4A55;--cyanGlow:rgba(0,200,232,0.15);
+  --amber:#F59E0B;--amberDim:#3D2A00;--green:#10B981;--greenDim:#053321;
+  --red:#EF4444;--redDim:#3D0A0A;--purple:#A78BFA;--purpleDim:#1E1040;
+  --textPrimary:#E8F4FF;--textSecondary:#7A9BBE;--textMuted:#3D5A7A;
+  --border:#0F2848;--borderBright:#1A3A5C;
+}
+body{background:var(--bg);color:var(--textPrimary);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--cyanDim);border-radius:2px}
+@keyframes pulse-ring{0%{box-shadow:0 0 0 0 rgba(0,200,232,0.4)}70%{box-shadow:0 0 0 10px rgba(0,200,232,0)}100%{box-shadow:0 0 0 0 rgba(0,200,232,0)}}
+@keyframes fade-in-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+@keyframes spin-slow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.fade-in{animation:fade-in-up 0.4s ease forwards}
+.blink{animation:blink 1.5s ease-in-out infinite}
+.spinning{animation:spin-slow 0.8s linear infinite}
+.card{background:var(--bgCard);border:1px solid var(--border);border-radius:8px;transition:border-color 0.2s,box-shadow 0.2s}
+.card:hover{border-color:var(--borderBright)}
+.card-glow:hover{border-color:var(--cyan);box-shadow:0 0 20px rgba(0,200,232,0.1)}
+.btn-primary{background:var(--cyan);color:var(--bg);border:none;padding:10px 20px;border-radius:6px;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:0.5px;transition:all 0.2s}
+.btn-primary:hover{background:#00E5FF;box-shadow:0 0 16px rgba(0,200,232,0.5);transform:translateY(-1px)}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.btn-ghost{background:transparent;color:var(--textSecondary);border:1px solid var(--border);padding:8px 16px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all 0.2s}
+.btn-ghost:hover{border-color:var(--cyan);color:var(--cyan)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-family:'Space Mono',monospace;font-weight:700;letter-spacing:0.5px}
+.badge-red{background:var(--redDim);color:var(--red)}
+.badge-amber{background:var(--amberDim);color:var(--amber)}
+.badge-green{background:var(--greenDim);color:var(--green)}
+.badge-cyan{background:var(--cyanDim);color:var(--cyan)}
+.badge-purple{background:var(--purpleDim);color:var(--purple)}
+.mono{font-family:'Space Mono',monospace}
+.progress-bar{height:4px;border-radius:2px;background:var(--border);overflow:hidden}
+.progress-fill{height:100%;border-radius:2px;transition:width 0.8s ease}
+.table-row{border-bottom:1px solid var(--border);transition:background 0.15s}
+.table-row:hover{background:rgba(0,200,232,0.03)}
+.table-row:last-child{border-bottom:none}
+input,select{background:var(--bgInput);border:1px solid var(--border);color:var(--textPrimary);padding:10px 14px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;width:100%}
+input:focus,select:focus{border-color:var(--cyan)}
+select option{background:var(--bgCard)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--textSecondary);transition:all 0.2s;border:1px solid transparent}
+.nav-item:hover{color:var(--textPrimary);background:var(--bgElevated)}
+.nav-item.active{color:var(--cyan);background:var(--cyanGlow);border-color:var(--cyanDim);font-weight:600}
+
+/* Layout */
+#app{display:flex;height:100vh;overflow:hidden;background:var(--bg)}
+#sidebar{flex-shrink:0;background:var(--bgCard);border-right:1px solid var(--border);display:flex;flex-direction:column;transition:width 0.3s ease;overflow:hidden}
+#sidebar.collapsed{width:64px}
+#sidebar.expanded{width:220px}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#topbar{height:52px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:var(--bgCard);flex-shrink:0}
+#content{flex:1;overflow-y:auto}
+
+.screen{display:none;padding:24px;flex-direction:column;gap:24px}
+.screen.active{display:flex}
+
+/* Hidden helper */
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Sidebar -->
+  <div id="sidebar" class="expanded">
+    <div style="padding:20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;min-height:64px">
+      <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--cyan),var(--cyanDim));display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#050D1A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="sidebar-label">
+        <div style="font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;color:var(--cyan);letter-spacing:1px;line-height:1.2">AMR-GENIUS</div>
+        <div style="font-size:9px;color:var(--textMuted);letter-spacing:1px;font-family:'Space Mono',monospace">INTELLIGENCE HUB</div>
+      </div>
+    </div>
+    <nav style="flex:1;padding:12px 8px;display:flex;flex-direction:column;gap:2px" id="nav"></nav>
+    <div style="padding:12px 8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:2px">
+      <div class="nav-item" style="justify-content:flex-start">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--textSecondary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="sidebar-label">Settings</span>
+      </div>
+      <div class="nav-item" id="collapseBtn" onclick="toggleSidebar()" style="justify-content:flex-start">
+        <svg id="collapseIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--textSecondary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        <span class="sidebar-label">Collapse</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div id="main">
+    <div id="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="screenLabel" style="font-size:10px;font-family:'Space Mono',monospace;color:var(--textMuted);letter-spacing:2px"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--green)" class="blink"></div>
+          <span style="font-size:11px;font-family:'Space Mono',monospace;color:var(--green)">LIVE</span>
+        </div>
+        <div style="width:1px;height:20px;background:var(--border)"></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--cyanDim);display:flex;align-items:center;justify-content:center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <span style="font-size:12px;color:var(--textSecondary)">Dr. Research Lead</span>
+        </div>
+      </div>
+    </div>
+    <div id="content">
+      <!-- Screens injected by JS -->
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+const PRESCRIBERS=[
+  {id:1,name:"Dr. Priya Sharma",dept:"Internal Medicine",ips:78,total:142,inappropriate:31,rank:1,trend:"up"},
+  {id:2,name:"Dr. Rahul Mehta",dept:"General Practice",ips:65,total:98,inappropriate:18,rank:2,trend:"down"},
+  {id:3,name:"Dr. Ananya Singh",dept:"Paediatrics",ips:54,total:87,inappropriate:12,rank:3,trend:"stable"},
+  {id:4,name:"Dr. Vikram Patel",dept:"Pulmonology",ips:42,total:63,inappropriate:8,rank:4,trend:"down"},
+  {id:5,name:"Dr. Neha Gupta",dept:"Emergency Medicine",ips:38,total:210,inappropriate:22,rank:5,trend:"up"},
+  {id:6,name:"Dr. Arjun Reddy",dept:"Nephrology",ips:22,total:45,inappropriate:3,rank:6,trend:"stable"},
+];
+const BATCHES=[
+  {id:"AMX-2024-1142",drug:"Amoxicillin 500mg",location:"Delhi Distribution Hub",temp:28.4,deviation:3,potency:76,risk:"critical"},
+  {id:"CIP-2024-0887",drug:"Ciprofloxacin 250mg",location:"Mumbai Warehouse",temp:26.1,deviation:1,potency:89,risk:"amber"},
+  {id:"MET-2024-0562",drug:"Metronidazole 400mg",location:"Chennai Pharmacy",temp:24.8,deviation:0,potency:97,risk:"stable"},
+  {id:"AZI-2024-2201",drug:"Azithromycin 500mg",location:"Kolkata Centre",temp:31.2,deviation:5,potency:68,risk:"critical"},
+  {id:"DOX-2024-1098",drug:"Doxycycline 100mg",location:"Hyderabad Hub",temp:25.0,deviation:0,potency:99,risk:"stable"},
+];
+const COMBINATIONS={
+  "Klebsiella pneumoniae (ESBL)":[
+    {drugs:"Meropenem + Colistin",synergy:0.91,mechanism:"Cell wall + membrane disruption",resistance_evasion:"High",evidence:"A",fic:0.18},
+    {drugs:"Fosfomycin + Imipenem",synergy:0.84,mechanism:"Cell wall synthesis (dual pathway)",resistance_evasion:"High",evidence:"B",fic:0.25},
+    {drugs:"Rifampicin + Colistin",synergy:0.76,mechanism:"RNA polymerase + outer membrane",resistance_evasion:"Moderate",evidence:"B",fic:0.38},
+    {drugs:"Aztreonam + Ceftazidime-avibactam",synergy:0.71,mechanism:"PBP inhibition + beta-lactamase inhibition",resistance_evasion:"Moderate",evidence:"C",fic:0.42},
+  ],
+  "MRSA (Staphylococcus aureus)":[
+    {drugs:"Vancomycin + Rifampicin",synergy:0.88,mechanism:"Cell wall + RNA polymerase",resistance_evasion:"High",evidence:"A",fic:0.21},
+    {drugs:"Daptomycin + Beta-lactam",synergy:0.82,mechanism:"Membrane depolarisation + PBP2 exposure",resistance_evasion:"High",evidence:"A",fic:0.28},
+    {drugs:"Linezolid + Fosfomycin",synergy:0.69,mechanism:"Protein synthesis + cell wall",resistance_evasion:"Moderate",evidence:"B",fic:0.44},
+  ],
+  "Acinetobacter baumannii (CRAB)":[
+    {drugs:"Colistin + Carbapenem",synergy:0.87,mechanism:"Membrane + cell wall dual hit",resistance_evasion:"High",evidence:"A",fic:0.22},
+    {drugs:"Sulbactam + Imipenem",synergy:0.79,mechanism:"PBP-specific inhibition",resistance_evasion:"Moderate",evidence:"B",fic:0.31},
+    {drugs:"Tigecycline + Colistin",synergy:0.72,mechanism:"Protein synthesis + membrane permeability",resistance_evasion:"Low",evidence:"C",fic:0.46},
+  ],
+};
+const COMPOUNDS=[
+  {name:"Disulfiram",current:"Alcohol dependence",target:"MRSA / ESKAPE",score:0.89,mic_reduction:"82%",patent:"Off-patent",stage:"Preclinical AMR",structure:"C₁₀H₂₀N₂S₄"},
+  {name:"Ebselen",current:"Antioxidant / hearing loss",target:"M. tuberculosis",score:0.84,mic_reduction:"76%",patent:"Patented (Pfizer)",stage:"Phase I",structure:"C₁₃H₉NOSe"},
+  {name:"Clofazimine",current:"Leprosy",target:"Drug-resistant TB",score:0.81,mic_reduction:"71%",patent:"Off-patent",stage:"Phase II AMR",structure:"C₂₇H₂₂Cl₂N₄"},
+  {name:"Auranofin",current:"Rheumatoid arthritis",target:"VRE / C. diff",score:0.79,mic_reduction:"68%",patent:"Off-patent",stage:"Preclinical AMR",structure:"C₂₀H₃₅AuO₉PS"},
+  {name:"Niclosamide",current:"Tapeworm infection",target:"MRSA / P. aeruginosa",score:0.77,mic_reduction:"65%",patent:"Off-patent",stage:"In vitro screening",structure:"C₁₃H₈Cl₂N₂O₄"},
+  {name:"Mitomycin C",current:"Cancer chemotherapy",target:"E. coli (ESBL)",score:0.71,mic_reduction:"58%",patent:"Off-patent",stage:"In vitro screening",structure:"C₁₅H₁₈N₄O₅"},
+];
+const AMR_RISK=[
+  {country:"India",risk:87,pathogen:"K. pneumoniae",resistance:"Carbapenem",trend:"+4.2%"},
+  {country:"Bangladesh",risk:82,pathogen:"E. coli (ESBL)",resistance:"3rd-gen Cephalosporin",trend:"+6.1%"},
+  {country:"South Africa",risk:76,pathogen:"M. tuberculosis",resistance:"MDR-TB",trend:"+2.8%"},
+  {country:"Brazil",risk:71,pathogen:"A. baumannii",resistance:"Carbapenem",trend:"+3.9%"},
+  {country:"USA",risk:54,pathogen:"MRSA",resistance:"Methicillin",trend:"-1.2%"},
+  {country:"UK",risk:49,pathogen:"C. difficile",resistance:"Metronidazole",trend:"-0.8%"},
+];
+
+// ── ICONS ────────────────────────────────────────────────────────────────────
+const ICONS={
+  home:"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10",
+  activity:"M22 12h-4l-3 9L9 3l-3 9H2",
+  shield:"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+  zap:"M13 2L3 14h9l-1 8 10-12h-9l1-8z",
+  alert:"M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01",
+  user:"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",
+  layers:"M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5",
+  package:"M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z M3.27 6.96L12 12.01l8.73-5.05 M12 22.08V12",
+  trending_up:"M23 6l-9.5 9.5-5-5L1 18 M17 6h6v6",
+  trending_down:"M23 18l-9.5-9.5-5 5L1 6 M17 18h6v-6",
+  minus:"M5 12h14",
+  chevron_right:"M9 18l6-6-6-6",
+};
+function icon(name,size=16,color="currentColor"){
+  const d=(ICONS[name]||"").split(" M").map((p,i)=>`<path d="${i===0?p:"M"+p}"/>`).join("");
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+}
+
+function sparkline(data,color){
+  const max=Math.max(...data),min=Math.min(...data);
+  const pts=data.map((v,i)=>{
+    const x=(i/(data.length-1))*80;
+    const y=20-((v-min)/(max-min||1))*16;
+    return `${x},${y}`;
+  }).join(" ");
+  return `<svg width="80" height="20" style="overflow:visible"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5"/></svg>`;
+}
+
+function riskGauge(value){
+  const color=value>=75?"var(--red)":value>=50?"var(--amber)":"var(--green)";
+  const label=value>=75?"CRITICAL":value>=50?"ELEVATED":"STABLE";
+  const circumference=2*Math.PI*40;
+  const progress=((100-value)/100)*circumference;
+  return `<div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+    <svg width="120" height="120" style="transform:rotate(-90deg)">
+      <circle cx="60" cy="60" r="40" fill="none" stroke="var(--border)" stroke-width="8"/>
+      <circle cx="60" cy="60" r="40" fill="none" stroke="${color}" stroke-width="8"
+        stroke-dasharray="${circumference}" stroke-dashoffset="${progress}"
+        style="transition:stroke-dashoffset 1s ease;filter:drop-shadow(0 0 6px ${color})"/>
+    </svg>
+    <div style="margin-top:-85px;text-align:center;z-index:1">
+      <div style="font-family:'Orbitron',sans-serif;font-size:26px;font-weight:700;color:${color}">${value}</div>
+      <div style="font-size:10px;font-family:'Space Mono',monospace;color:${color};letter-spacing:2px">${label}</div>
+    </div>
+    <div style="margin-top:44px;font-size:11px;color:var(--textMuted);font-family:'Space Mono',monospace;letter-spacing:1px">GLOBAL AMR RISK</div>
+  </div>`;
+}
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let activeScreen="dashboard";
+let sidebarCollapsed=false;
+let selectedPrescriber=null;
+let prescFilterText="";
+let selectedBatch=null;
+let comboPathogen="";
+let comboResults=null;
+let comboLoading=false;
+let selectedCombo=null;
+let repurposeSearch="";
+let repurposeFilter="all";
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+const NAV_ITEMS=[
+  {id:"dashboard",label:"Overview",icon:"home",screen:"SURVEILLANCE OVERVIEW"},
+  {id:"hcp",label:"HCP Intelligence",icon:"user",screen:"PRESCRIBER ANALYTICS"},
+  {id:"formulation",label:"Formulation",icon:"package",screen:"STABILITY MONITOR"},
+  {id:"combination",label:"Combination Rx",icon:"layers",screen:"THERAPY OPTIMIZER"},
+  {id:"repurposing",label:"Repurposing",icon:"zap",screen:"COMPOUND ENGINE"},
+];
+
+function buildNav(){
+  const nav=document.getElementById("nav");
+  nav.innerHTML=NAV_ITEMS.map(item=>`
+    <div class="nav-item ${activeScreen===item.id?"active":""}" 
+         onclick="navigate('${item.id}')"
+         style="justify-content:${sidebarCollapsed?"center":"flex-start"}">
+      ${icon(item.icon,16,activeScreen===item.id?"var(--cyan)":"var(--textSecondary)")}
+      ${sidebarCollapsed?"":`<span>${item.label}</span>`}
+    </div>
+  `).join("");
+}
+
+function navigate(id){
+  activeScreen=id;
+  selectedPrescriber=null;
+  selectedBatch=null;
+  selectedCombo=null;
+  comboResults=null;
+  comboLoading=false;
+  buildNav();
+  const item=NAV_ITEMS.find(n=>n.id===id);
+  document.getElementById("screenLabel").textContent=item?.screen||"";
+  renderContent();
+}
+
+function toggleSidebar(){
+  sidebarCollapsed=!sidebarCollapsed;
+  const sb=document.getElementById("sidebar");
+  sb.className=sidebarCollapsed?"collapsed":"expanded";
+  document.querySelectorAll(".sidebar-label").forEach(el=>{
+    el.style.display=sidebarCollapsed?"none":"";
+  });
+  buildNav();
+}
+
+// ── SCREENS ───────────────────────────────────────────────────────────────────
+function renderContent(){
+  const content=document.getElementById("content");
+  switch(activeScreen){
+    case "dashboard": content.innerHTML=dashboardHTML(); break;
+    case "hcp": content.innerHTML=hcpHTML(); break;
+    case "formulation": content.innerHTML=formulationHTML(); break;
+    case "combination": content.innerHTML=combinationHTML(); break;
+    case "repurposing": content.innerHTML=repurposingHTML(); break;
+  }
+  attachHandlers();
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function dashboardHTML(){
+  const kpis=[
+    {label:"Resistance Alerts",value:"14",sub:"+3 since yesterday",icon:"alert",color:"var(--red)",spark:[4,7,5,9,8,11,14]},
+    {label:"Inappropriate Rx Today",value:"287",sub:"32.4% of total prescriptions",icon:"activity",color:"var(--amber)",spark:[310,295,305,280,301,290,287]},
+    {label:"At-Risk Drug Batches",value:"6",sub:"2 requiring immediate action",icon:"package",color:"var(--amber)",spark:[3,5,4,6,5,7,6]},
+    {label:"Repurposing Leads",value:"42",sub:"8 new this week",icon:"zap",color:"var(--green)",spark:[28,30,32,35,37,40,42]},
+  ];
+  const kpiCards=kpis.map((k,i)=>`
+    <div class="card card-glow fade-in" style="padding:20px;display:flex;flex-direction:column;gap:12px;animation-delay:${i*0.08}s">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="background:${k.color.replace("var(","").replace(")","")===k.color?k.color+"18":"color-mix(in srgb,"+k.color+" 12%,transparent)"};border:1px solid ${k.color.replace(")","")+",transparent)".replace("transparent)","44)")};border-radius:8px;padding:8px">
+          ${icon(k.icon,18,k.color)}
+        </div>
+        ${sparkline(k.spark,k.color)}
+      </div>
+      <div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:28px;font-weight:700;color:${k.color}">${k.value}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--textPrimary);margin-top:2px">${k.label}</div>
+        <div style="font-size:11px;color:var(--textMuted);margin-top:2px">${k.sub}</div>
+      </div>
+    </div>
+  `).join("");
+
+  const alerts=[
+    {msg:"MRSA cluster detected — ICU Ward 3",time:"2m ago",sev:"red"},
+    {msg:"Batch AMX-2024-1142 potency critical",time:"18m ago",sev:"red"},
+    {msg:"Carbapenem resistance spike — Mumbai",time:"1h ago",sev:"amber"},
+    {msg:"New repurposing lead: Disulfiram",time:"3h ago",sev:"green"},
+  ];
+
+  const riskRows=AMR_RISK.map((row,i)=>{
+    const rc=row.risk>=75?"var(--red)":row.risk>=50?"var(--amber)":"var(--green)";
+    return `<tr class="table-row">
+      <td style="padding:12px;font-size:13px;font-weight:600">${row.country}</td>
+      <td style="padding:12px;font-size:12px;color:var(--textSecondary);font-family:'Space Mono',monospace">${row.pathogen}</td>
+      <td style="padding:12px;font-size:12px;color:var(--textSecondary)">${row.resistance}</td>
+      <td style="padding:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:${row.risk}%;background:${rc}"></div></div>
+          <span style="font-size:12px;font-family:'Space Mono',monospace;color:${rc};min-width:24px">${row.risk}</span>
+        </div>
+      </td>
+      <td style="padding:12px"><span style="font-size:12px;font-family:'Space Mono',monospace;color:${row.trend.startsWith("+")?`var(--red)`:`var(--green)`}">${row.trend}</span></td>
+    </tr>`;
+  }).join("");
+
+  return `<div class="fade-in" style="padding:24px;display:flex;flex-direction:column;gap:24px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--textMuted);letter-spacing:2px;margin-bottom:4px">SURVEILLANCE OVERVIEW</div>
+        <h1 style="font-size:24px;font-weight:600">AMR Intelligence Dashboard</h1>
+        <div style="font-size:13px;color:var(--textSecondary);margin-top:4px">Last updated: <span style="color:var(--cyan);font-family:'Space Mono',monospace">March 02, 2026 — 14:32 IST</span></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-ghost" style="font-size:12px">Export Report</button>
+        <button class="btn-primary">+ New Alert</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">${kpiCards}</div>
+    <div style="display:grid;grid-template-columns:280px 1fr;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card" style="padding:24px;display:flex;justify-content:center">${riskGauge(73)}</div>
+        <div class="card" style="padding:16px">
+          <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--textMuted);letter-spacing:2px;margin-bottom:12px">LIVE ALERTS</div>
+          ${alerts.map((a,i)=>`
+            <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:${i<3?`1px solid var(--border)`:"none"}">
+              <div style="width:6px;height:6px;border-radius:50%;background:${a.sev==="red"?"var(--red)":a.sev==="amber"?"var(--amber)":"var(--green)"};margin-top:5px;flex-shrink:0" class="${a.sev==="red"?"blink":""}"></div>
+              <div style="flex:1">
+                <div style="font-size:12px;color:var(--textPrimary);line-height:1.4">${a.msg}</div>
+                <div style="font-size:10px;color:var(--textMuted);margin-top:2px;font-family:'Space Mono',monospace">${a.time}</div>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+      <div class="card" style="padding:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div>
+            <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--textMuted);letter-spacing:2px;margin-bottom:4px">GLOBAL RESISTANCE INDEX</div>
+            <div style="font-size:16px;font-weight:600">Country Risk Surveillance</div>
+          </div>
+          <div style="font-size:11px;color:var(--textMuted)">Source: WHO GLASS + CDDEP</div>
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="border-bottom:1px solid var(--border)">
+            ${["Country","Pathogen","Resistance","Risk Score","Trend"].map(h=>`<th style="text-align:left;padding:8px 12px;font-size:11px;font-family:'Space Mono',monospace;color:var(--textMuted);letter-spacing:1px">${h}</th>`).join("")}
+          </tr></thead>
+          <tbody>${riskRows}</tbody>
+        </table>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── HCP ───────────────────────────────────────────────────────────────────────
+function hcpHTML(){
+  const avg=Math.round(PRESCRIBERS.reduce((a,b)=>a+b.ips,0)/PRESCRIBERS.length);
+  const filtered=PRESCRIBERS.filter(p=>
+    p.name.toLowerCase().includes(prescFilterText.toLowerCase())||
+    p.dept.toLowerCase().includes(prescFilterText.toLowerCase())
+  );
+
+  const prescriberList=filtered.map((p,i)=>{
+    const bc=p.ips>=65?"badge-red":p.ips>=40?"badge-amber":"badge-green";
+    const trendIcon=p.trend==="up"?"trending_up":p.trend==="down"?"trending_down":"minus";
+    const trendColor=p.trend==="up"?"var(--red)":p.trend==="down"?"var(--green)":"var(--textMuted)";
+    const fillColor=p.ips>=65?"var(--red)":p.ips>=40?"var(--amber)":"var(--green)";
+    const sel=selectedPrescriber&&selectedPrescriber.id===p.id;
+    return `<div onclick="selectPrescriber(${p.id})" style="cursor:pointer;padding:12px 14px;border-radius:6px;border:1px solid ${sel?"var(--cyan)":"var(--border)"};background:${sel?"var(--cyanGlow)":"transparent"};transition:all 0.2s">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--cyanDim);display:flex;align-items:center;justify-content:center;font-size:11px;font-family:'Space Mono',monospace;color:var(--cyan)">${i+1}</div>
+          <div>
+            <div style="font-size:13px;font-weight:600">${p.name}</div>
+            <div style="font-size:11px;color:var(--textMuted)">${p.dept}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="badge ${bc}">IPS ${p.ips}</span>
+          ${icon(trendIcon,14,trendColor)}
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:${p.ips}%;background:${fillColor}"></div></div>
+        <span style="font-size:11px;color:var(--textMuted);font-family:'Space Mono',monospace;min-width:80px;text-align:right">${p.inappropriate}/${p.total} flagged</span>
+      </div>
+    </div>`;
+  }).join("");
+
+  let detailPanel=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;gap:12px;color:var(--textMuted)">
+    ${icon("user",32,"var(--textMuted)")}
+    <div style="font-size:13px">Select a prescriber to view details</div>
+  </div>`;
+
+  if(selectedPrescriber){
+    const p=selectedPrescriber;
+    const bc=p.ips>=65?"badge-red":p.ips>=40?"badge-amber":"badge-green";
+    const flagRate=Math.round((p.inappropriate/p.total)*100);
+    const deviations=["Broad-spectrum for community UTI","No documented indication — Azithromycin","Co-prescribing without stewardship check"];
+    detailPanel=`<div style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:700;font-size:16px">${p.name}</div>
+          <div style="font-size:12px;color:var(--textMuted)">${p.dept}</div>
+        </div>
+        <span class="badge ${bc}">IPS ${p.ips}/100</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        ${[
+          {label:"Total Prescriptions",value:p.total},
+          {label:"Flagged Rx",value:p.inappropriate},
+          {label:"Flag Rate",value:flagRate+"%"},
+          {label:"vs. Peer Avg",value:`+${p.ips-avg} pts`},
+        ].map(m=>`<div style="background:var(--bgElevated);border-radius:6px;padding:12px 14px">
+          <div style="font-size:10px;color:var(--textMuted);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:4px">${m.label}</div>
+          <div style="font-size:20px;font-weight:700;font-family:'Orbitron',sans-serif;color:var(--cyan)">${m.value}</div>
+        </div>`).join("")}
+      </div>
+      <div>
+        <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--textMuted);letter-spacing:1px;margin-bottom:8px">TOP DEVIATIONS</div>
+        ${deviations.map((d,i)=>`<div style="display:flex;gap:10px;padding:8px 0;border-bottom:${i<2?`1px solid var(--border)`:"none"}">
+          ${icon("alert",14,"var(--amber)")}
+          <span style="font-size:12px;color:var(--textSecondary)">${d}</span>
+        </div>`).join("")}
+      </div>
+      <div style="background:var(--cyanGlow);border:1px solid var(--cyanDim);border-radius:6px;padding:14px">
+        <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--cyan);letter-spacing:1px;margin-bottom:6px">AI RECOMMENDATION</div>
+        <p style="font-size:12px;color:var(--textSecondary);line-height:1.6">Consider narrow-spectrum alternatives per WHO AWaRe guidelines. ${p.name} ranks in the top ${p.rank*15}th percentile for inappropriate prescribing. Recommend peer-review session with stewardship team.</p>
+      </div>
+      <button class="btn-primary" style="width:100%">Send Personalised Nudge</button>
+    </div>`;
+  }
+
+  return `<div class="fade-in" style="padding:24px;display:flex;flex-direction:column;gap:24px">
+    <div>
+      <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--textMuted);letter-spacing:2px;margin-bottom:4px">MODULE 01</div>
+      <h1 style="font-size:24px;font-weight:600">HCP Action Intelligence</h1>
+      <p style="font-size:13px;color:var(--textSecondary);margin-top:4px">Prescriber behaviour tracking — inappropriate antibiotic prescription scoring</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start">
+      <div class="card" style="padding:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div style="font-size:14px;font-weight:600">Prescriber Ranking — Inappropriate Prescribing Score (IPS)</div>
+          <input id="prescFilter" placeholder="Search prescriber / dept..." value="${prescFilterText}" oninput="filterPrescribers(this.value)" style="width:220px;font-size:13px"/>
+        </div>
+        <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px">
+          <div style="width:20px;height:2px;border-top:2px dashed var(--cyan)"></div>
+          <span style="font-size:11px;color:var(--cyan);font-family:'Space Mono',monospace">Dept. avg: ${avg}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">${prescriberList}</div>
+      </div>
+      <div class="card" style="padding:20px">${detailPanel}</div>
+    </div>
+  </div>`;
+}
+
+// ── FORMULATION ───────────────────────────────────────────────────────────────
+function formulationHTML(){
+  const summaryCards=[
+    {label:"Batches Monitored",value:"143",icon:"package",color:"var(--cyan)"},
+    {label:"Critical Risk Batches",value:"2",icon:"alert",color:"var(--red)"},
+    {label:"At-Risk Batches",value:"4",icon:"alert",color:"var(--amber)"},
+  ];
+
+  const batchRows=BATCHES.map((b,i)=>{
+    const sel=selectedBatch&&selectedBatch.id===b.id;
+    const tc=b.temp>28?"var(--red)":"var(--textPrimary)";
+    const dc=b.deviation>2?"var(--red)":b.deviation>0?"var(--amber)":"var(--green)";
+    const pc=b.potency<80?"var(--red)":b.potency<90?"var(--amber)":"var(--green)";
+    const rc=`badge-${b.risk==="critical"?"red":b.risk==="amber"?"amber":"green"}`;
+    return `<tr class="table-row" style="cursor:pointer;background:${sel?"var(--cyanGlow)":"transparent"}" onclick="selectBatch('${b.id}')">
+      <td style="padding:12px 10px;font-size:12px;font-family:'Space Mono',monospace;color:var(--cyan)">${b.id}</td>
+      <td style="padding:12px 10px;font-size:12px">${b.drug}</td>
+      <td style="padding:12px 10px;font-size:12px;color:var(--textSecondary)">${b.location}</td>
+      <td style="padding:12px 10px;font-size:12px;font-family:'Space Mono',monospace;color:${tc}">${b.temp}°C</td>
+      <td style="padding:12px 10px;font-size:12px;font-family:'Space Mono',monospace;color:${dc}">${b.deviation}</td>
+      <td style="padding:12px 10px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="progress-bar" style="width:60px"><div class="progress-fill" style="width:${b.potency}%;background:${pc}"></div></div>
+          <span style="font-size:12px;font-family:'Space Mono',monospace;color:${pc}">${b.potency}%</span>
+        </div>
+      </td>
+      <td style="padding:12px 10px"><span class="badge ${rc}">${b.risk.toUpperCase()}</span></td>
+    </tr>`;
+  }).join("");
+
+  let detailPanel=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:250px;gap:12px;color:var(--textMuted)">
+    ${icon("package",32,"var(--textMuted)")}
+    <div style="font-size:13px">Select a batch for analysis</div>
+  </div>`;
+
+  if(selectedBatch){
+    const b=selectedBatch;
+    const chartColor=b.risk==="critical"?"var(--red)":"var(--amber)";
+    detailPanel=`<div style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--cyan);letter-spacing:2px">BATCH ANALYSIS</div>
+        <div style="font-size:16px;font-weight:700;margin-top:4px">${b.drug}</div>
+        <div style="font-size:12px;color:var(--textMuted);font-family:'Space Mono',monospace">${b.id}</div>
+      </div>
+      <div style="background:var(--bgElevated);border-radius:6px;padding:14px">
+        <div style="font-size:10px;font-family:'Space Mono',monospace;color:var(--textMuted);margin-bottom:10px">TEMPERATURE LOG (72h)</div>
+        <svg width="100%" height="60" viewBox="0 0 280 60">
+          <defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${b.risk==="critical"?"#EF4444":"#F59E0B"}" stop-opacity="0.4"/>
+            <stop offset="100%" stop-color="${b.risk==="critical"?"#EF4444":"#F59E0B"}" stop-opacity="0"/>
+          </linearGradient></defs>
+          <line x1="0" y1="30" x2="280" y2="30" stroke="#0F2848" stroke-width="1" stroke-dasharray="4,4"/>
+          <text x="2" y="28" font-size="8" fill="#3D5A7A" font-family="Space Mono">25°C max</text>
+          <polyline points="0,45 40,40 80,32 120,22 160,18 200,25 240,20 280,12" fill="none" stroke="${b.risk==="critical"?"#EF4444":"#F59E0B"}" stroke-width="2"/>
+          <polygon points="0,45 40,40 80,32 120,22 160,18 200,25 240,20 280,12 280,60 0,60" fill="url(#tg)"/>
+        </svg>
+      </div>
+      ${b.risk==="critical"?`<div style="background:var(--redDim);border:1px solid rgba(239,68,68,0.26);border-radius:6px;padding:12px">
+        <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--red);margin-bottom:6px">⚠ CRITICAL — ACTION REQUIRED</div>
+        <p style="font-size:12px;color:var(--textSecondary);line-height:1.6">Predicted potency ${b.potency}% — below minimum inhibitory threshold. Quarantine and batch recall recommended immediately.</p>
+      </div>`:""}
+      <button class="btn-primary" style="background:${b.risk==="critical"?"var(--red)":"var(--amber)"};width:100%;color:#fff">
+        ${b.risk==="critical"?"Initiate Recall Protocol":"Flag for Inspection"}
+      </button>
+    </div>`;
+  }
+
+  return `<div class="fade-in" style="padding:24px;display:flex;flex-direction:column;gap:24px">
+    <div>
+      <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--textMuted);letter-spacing:2px;margin-bottom:4px">MODULE 02</div>
+      <h1 style="font-size:24px;font-weight:600">Formulation Stability Analytics</h1>
+      <p style="font-size:13px;color:var(--textSecondary);margin-top:4px">Drug quality surveillance — predictive degradation monitoring across supply chains</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+      ${summaryCards.map(s=>`<div class="card" style="padding:16px 20px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:11px;color:var(--textMuted);font-family:'Space Mono',monospace;letter-spacing:1px">${s.label}</div>
+          <div style="font-size:24px;font-weight:700;font-family:'Orbitron',sans-serif;color:${s.color};margin-top:4px">${s.value}</div>
+        </div>
+        <div style="border-radius:8px;padding:10px">${icon(s.icon,20,s.color)}</div>
+      </div>`).join("")}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start">
+      <div class="card" style="padding:20px">
+        <div style="font-size:14px;font-weight:600;margin-bottom:16px">Active Drug Batches — Supply Chain Monitor</div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="border-bottom:1px solid var(--border)">
+            ${["Batch ID","Drug","Location","Temp (°C)","Deviations","Predicted Potency","Status"].map(h=>`<th style="text-align:left;padding:8px 10px;font-size:10px;font-family:'Space Mono',monospace;color:var(--textMuted);letter-spacing:1px">${h}</th>`).join("")}
+          </tr></thead>
+          <tbody>${batchRows}</tbody>
+        </table>
+      </div>
+      <div class="card" style="padding:20px">${detailPanel}</div>
+    </div>
+  </div>`;
+}
+
+// ── COMBINATION ───────────────────────────────────────────────────────────────
+function combinationHTML(){
+  const pathogenOptions=Object.keys(COMBINATIONS).map(p=>`<option value="${p}" ${comboPathogen===p?"selected":""}>${p}</option>`).join("");
+
+  let resultsHTML="";
+  if(comboLoading){
+    resultsHTML=`<div class="card" style="padding:40px;display:flex;flex-direction:column;align-items:center;gap:16px">
+      <div style="width:48px;height:48px;border:3px solid var(--cyanDim);border-top-color:var(--cyan);border-radius:50%" class="spinning"></div>
+      <div style="font-size:13px;color:var(--cyan);font-family:'Space Mono',monospace">Running synergy prediction model...</div>
+      <div style="font-size:11px;color:var(--textMuted)">Querying EUCAST MIC database + neural network inference</div>
+    </div>`;
+  } else if(comboResults){
+    const combos=comboResults.map((r,i)=>{
+      const sel=selectedCombo===r;
+      const sc=r.synergy>=0.85?"var(--green)":r.synergy>=0.75?"var(--cyan)":"var(--amber)";
+      const rec=`badge-${r.resistance_evasion==="High"?"green":r.resistance_evasion==="Moderate"?"amber":"red"}`;
+      return `<div onclick="selectCombo(${i})" style="cursor:pointer;padding:14px 16px;border-radius:6px;border:1px solid ${sel?"var(--cyan)":"var(--border)"};background:${sel?"var(--cyanGlow)":"var(--bgElevated)"};transition:all 0.2s">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-family:'Orbitron',sans-serif;font-size:13px;color:var(--textMuted);min-width:20px">#${i+1}</div>
+            <div style="font-size:14px;font-weight:600">${r.drugs}</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <span class="badge badge-cyan">EV Grade ${r.evidence}</span>
+            <span class="badge ${rec}">${r.resistance_evasion} RE</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="flex:1"><div class="progress-bar"><div class="progress-fill" style="width:${r.synergy*100}%;background:${sc}"></div></div></div>
+          <span style="font-size:12px;font-family:'Space Mono',monospace;color:var(--cyan);min-width:60px">Synergy: ${r.synergy.toFixed(2)}</span>
+        </div>
+        <div style="font-size:11px;color:var(--textMuted);margin-top:8px">${r.mechanism}</div>
+      </div>`;
+    }).join("");
+
+    let detailCombo=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:250px;gap:12px;color:var(--textMuted)">
+      ${icon("layers",32,"var(--textMuted)")}<div style="font-size:13px">Select a combination</div>
+    </div>`;
+
+    if(selectedCombo){
+      const sc=selectedCombo;
+      detailCombo=`<div style="display:flex;flex-direction:column;gap:14px">
+        <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--cyan);letter-spacing:2px">COMBINATION DETAIL</div>
+        <div style="font-size:15px;font-weight:700">${sc.drugs}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          ${[
+            {label:"Synergy Score",value:sc.synergy.toFixed(2),color:"var(--cyan)"},
+            {label:"FIC Index",value:sc.fic.toFixed(2),color:"var(--purple)"},
+            {label:"Evidence Grade",value:sc.evidence,color:"var(--green)"},
+            {label:"Resistance Evasion",value:sc.resistance_evasion,color:sc.resistance_evasion==="High"?"var(--green)":"var(--amber)"},
+          ].map(m=>`<div style="background:var(--bgElevated);border-radius:6px;padding:10px 12px">
+            <div style="font-size:9px;color:var(--textMuted);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:4px">${m.label}</div>
+            <div style="font-size:18px;font-weight:700;font-family:'Orbitron',sans-serif;color:${m.color}">${m.value}</div>
+          </div>`).join("")}
+        </div>
+        <div style="background:var(--bgElevated);border-radius:6px;padding:12px">
+          <div style="font-size:10px;font-family:'Space Mono',monospace;color:var(--textMuted);margin-bottom:6px">MECHANISM</div>
+          <p style="font-size:12px;color:var(--textSecondary);line-height:1.6">${sc.mechanism}. FIC index of ${sc.fic.toFixed(2)} confirms synergism (FIC &lt; 0.5). Reduces selection pressure for resistance mutations.</p>
+        </div>
+        <button class="btn-primary" style="width:100%">Download Clinical Summary PDF</button>
+      </div>`;
+    }
+
+    resultsHTML=`<div style="display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start">
+      <div class="card" style="padding:20px">
+        <div style="margin-bottom:16px">
+          <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--textMuted);letter-spacing:1px;margin-bottom:4px">RANKED COMBINATIONS — ${comboResults.length} RESULTS</div>
+          <div style="font-size:14px;font-weight:600">Optimized for: <span style="color:var(--cyan)">${comboPathogen}</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">${combos}</div>
+      </div>
+      <div class="card" style="padding:20px">${detailCombo}</div>
+    </div>`;
+  }
+
+  return `<div class="fade-in" style="padding:24px;display:flex;flex-direction:column;gap:24px">
+    <div>
+      <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--textMuted);letter-spacing:2px;margin-bottom:4px">MODULE 03</div>
+      <h1 style="font-size:24px;font-weight:600">Combination Therapy Optimizer</h1>
+      <p style="font-size:13px;color:var(--textSecondary);margin-top:4px">AI-driven synergistic drug discovery for resistant pathogens</p>
+    </div>
+    <div class="card" style="padding:20px">
+      <div style="font-size:12px;font-family:'Space Mono',monospace;color:var(--textMuted);letter-spacing:1px;margin-bottom:14px">CLINICAL INPUTS</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end">
+        <div>
+          <label style="font-size:11px;color:var(--textMuted);font-family:'Space Mono',monospace;letter-spacing:1px;display:block;margin-bottom:6px">TARGET PATHOGEN</label>
+          <select id="pathoSelect" onchange="comboPathogen=this.value">
+            <option value="">Select pathogen...</option>${pathogenOptions}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--textMuted);font-family:'Space Mono',monospace;letter-spacing:1px;display:block;margin-bottom:6px">RESISTANCE PROFILE</label>
+          <select><option>Carbapenem-resistant</option><option>ESBL-producing</option><option>Pan-resistant</option></select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--textMuted);font-family:'Space Mono',monospace;letter-spacing:1px;display:block;margin-bottom:6px">PATIENT CONTEXT</label>
+          <select><option>Adult — Normal renal function</option><option>Adult — Renal impairment</option><option>Paediatric</option></select>
+        </div>
+        <button class="btn-primary" id="optimizeBtn" onclick="runOptimize()" style="padding-top:12px;padding-bottom:12px">Optimize →</button>
+      </div>
+    </div>
+    ${resultsHTML}
+  </div>`;
+}
+
+// ── REPURPOSING ───────────────────────────────────────────────────────────────
+function repurposingHTML(){
+  const filtered=COMPOUNDS.filter(c=>
+    (c.name.toLowerCase().includes(repurposeSearch.toLowerCase())||c.target.toLowerCase().includes(repurposeSearch.toLowerCase()))&&
+    (repurposeFilter==="all"||c.stage.toLowerCase().includes(repurposeFilter.toLowerCase()))
+  );
+
+  const cards=filtered.map((c,i)=>{
+    const sc=c.score>=0.85?"var(--green)":c.score>=0.75?"var(--cyan)":"var(--amber)";
+    return `<div class="card card-glow" style="padding:20px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div>
+          <div style="font-size:16px;font-weight:700">${c.name}</div>
+          <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--textMuted);margin-top:2px">${c.structure}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <span class="badge ${c.patent==="Off-patent"?"badge-green":"badge-amber"}">${c.patent}</span>
+          <span class="badge badge-purple">${c.stage}</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div style="background:var(--bgElevated);border-radius:6px;padding:10px 12px">
+          <div style="font-size:9px;color:var(--textMuted);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:4px">AI AMR SCORE</div>
+          <div style="font-size:22px;font-weight:700;font-family:'Orbitron',sans-serif;color:${sc}">${c.score.toFixed(2)}</div>
+        </div>
+        <div style="background:var(--bgElevated);border-radius:6px;padding:10px 12px">
+          <div style="font-size:9px;color:var(--textMuted);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:4px">MIC REDUCTION</div>
+          <div style="font-size:22px;font-weight:700;font-family:'Orbitron',sans-serif;color:var(--green)">${c.mic_reduction}</div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:12px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:10px;color:var(--textMuted);font-family:'Space Mono',monospace;letter-spacing:1px">CURRENT USE → AMR TARGET</div>
+          <div style="font-size:12px;margin-top:3px">
+            <span style="color:var(--textSecondary)">${c.current}</span>
+            <span style="color:var(--textMuted);margin:0 6px">→</span>
+            <span style="color:var(--cyan);font-weight:600">${c.target}</span>
+          </div>
+        </div>
+        <button class="btn-ghost" style="font-size:11px;padding:6px 12px">View Profile</button>
+      </div>
+    </div>`;
+  }).join("");
+
+  return `<div class="fade-in" style="padding:24px;display:flex;flex-direction:column;gap:24px">
+    <div>
+      <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--textMuted);letter-spacing:2px;margin-bottom:4px">MODULE 04</div>
+      <h1 style="font-size:24px;font-weight:600">Compound Repurposing Engine</h1>
+      <p style="font-size:13px;color:var(--textSecondary);margin-top:4px">AI-powered screening of existing compounds for novel antimicrobial activity</p>
+    </div>
+    <div class="card" style="padding:16px;display:flex;gap:12px;align-items:center">
+      <div style="flex:1">
+        <input placeholder="Search by compound name or target pathogen..." value="${repurposeSearch}" oninput="filterRepurpose(this.value)" style="font-size:13px"/>
+      </div>
+      <select id="repurposeStage" onchange="filterRepurposeStage(this.value)" style="width:180px;font-size:13px">
+        <option value="all" ${repurposeFilter==="all"?"selected":""}>All Stages</option>
+        <option value="phase ii" ${repurposeFilter==="phase ii"?"selected":""}>Phase II</option>
+        <option value="phase i" ${repurposeFilter==="phase i"?"selected":""}>Phase I</option>
+        <option value="preclinical" ${repurposeFilter==="preclinical"?"selected":""}>Preclinical</option>
+        <option value="vitro" ${repurposeFilter==="vitro"?"selected":""}>In Vitro</option>
+      </select>
+      <span style="font-size:12px;color:var(--textMuted);font-family:'Space Mono',monospace;white-space:nowrap">${filtered.length} compounds</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">${cards}</div>
+  </div>`;
+}
+
+// ── HANDLERS ──────────────────────────────────────────────────────────────────
+function attachHandlers(){}
+
+function selectPrescriber(id){
+  selectedPrescriber=PRESCRIBERS.find(p=>p.id===id);
+  renderContent();
+}
+function filterPrescribers(v){
+  prescFilterText=v;
+  renderContent();
+}
+function selectBatch(id){
+  selectedBatch=BATCHES.find(b=>b.id===id);
+  renderContent();
+}
+function runOptimize(){
+  const sel=document.getElementById("pathoSelect");
+  comboPathogen=sel?sel.value:comboPathogen;
+  if(!comboPathogen)return;
+  comboLoading=true;
+  comboResults=null;
+  selectedCombo=null;
+  renderContent();
+  setTimeout(()=>{
+    comboResults=COMBINATIONS[comboPathogen]||[];
+    comboLoading=false;
+    renderContent();
+  },1400);
+}
+function selectCombo(i){
+  selectedCombo=comboResults[i];
+  renderContent();
+}
+function filterRepurpose(v){
+  repurposeSearch=v;
+  renderContent();
+}
+function filterRepurposeStage(v){
+  repurposeFilter=v;
+  renderContent();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+buildNav();
+document.getElementById("screenLabel").textContent="SURVEILLANCE OVERVIEW";
+renderContent();
+</script>
+</body>
+</html>
